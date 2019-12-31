@@ -26,16 +26,10 @@
 
 #include <stdio.h>
 #include <stdint.h>
+#include <unistd.h>
+#include <stdlib.h>
 #include <sys/mman.h>
 #include <fcntl.h>
-
-/*
- * GPIO base address
- * 
- * Each register is 32 bits, thus our offsets must be 32 bits as well
- */
-
-#define GPIO_BASE_ADDRESS	0x10000600
 
 /*
  * Register definitions
@@ -51,9 +45,7 @@
  * Controls the direction of data per register (input/output)
  */
 
-#define GPIO_CTRL_0		GPIO_BASE_ADDRESS
-#define GPIO_CTRL_1		GPIO_BASE_ADDRESS + 0x4
-#define GPIO_CTRL_2		GPIO_BASE_ADDRESS + 0x8
+#define GPIO_CTRL	0x600
 
 /*
  * GPIO_POL
@@ -61,9 +53,7 @@
  * Controls the polarity of the data (high+read/low+write, high+write/low+read)
  */
 
-#define GPIO_POL_0		GPIO_BASE_ADDRESS + 0x10
-#define GPIO_POL_1		GPIO_BASE_ADDRESS + 0x14
-#define GPIO_POL_2		GPIO_BASE_ADDRESS + 0x18
+#define GPIO_POL	0x610
 
 /*
  * GPIO_DATA
@@ -71,9 +61,7 @@
  * Stores the current GPIO data
  */
 
-#define GPIO_DATA_0		GPIO_BASE_ADDRESS + 0x20
-#define GPIO_DATA_1		GPIO_BASE_ADDRESS + 0x24
-#define GPIO_DATA_2		GPIO_BASE_ADDRESS + 0x28
+#define GPIO_DATA	0x620
 
 /*
  * GPIO_DSET
@@ -81,9 +69,7 @@
  * Sets bits in GPIO_DATA registers
  */
 
-#define GPIO_DSET_0		GPIO_BASE_ADDRESS + 0x30
-#define GPIO_DSET_1		GPIO_BASE_ADDRESS + 0x34
-#define GPIO_DSET_2		GPIO_BASE_ADDRESS + 0x38
+#define GPIO_DSET	0x630
 
 /*
  * GPIO_DCLR
@@ -91,9 +77,7 @@
  * Clears bits in GPIO_DATA registers
  */
 
-#define GPIO_DCLR_0		GPIO_BASE_ADDRESS + 0x40
-#define GPIO_DCLR_1		GPIO_BASE_ADDRESS + 0x44
-#define GPIO_DCLR_2		GPIO_BASE_ADDRESS + 0x48
+#define GPIO_DCLR	0x640
 
 /*
  * GINT_REDGE
@@ -101,9 +85,7 @@
  * Enables the condition of rising edge triggered interrupt
  */
 
-#define GINT_REDGE_0		GPIO_BASE_ADDRESS + 0x50
-#define GINT_REDGE_1		GPIO_BASE_ADDRESS + 0x54
-#define GINT_REDGE_2		GPIO_BASE_ADDRESS + 0x58
+#define GINT_REDGE	0x650
 
 /*
  * GINT_FEDGE
@@ -111,9 +93,7 @@
  * Enables the condition of falling edge triggered interrupt
  */
 
-#define GINT_FEDGE_0		GPIO_BASE_ADDRESS + 0x60
-#define GINT_FEDGE_1		GPIO_BASE_ADDRESS + 0x64
-#define GINT_FEDGE_2		GPIO_BASE_ADDRESS + 0x68
+#define GINT_FEDGE	0x660
 
 /*
  * GINT_HLVL
@@ -121,9 +101,7 @@
  * Enables the condition of high level triggered interrupt
  */
 
-#define GINT_HLVL_0		GPIO_BASE_ADDRESS + 0x70
-#define GINT_HLVL_1		GPIO_BASE_ADDRESS + 0x74
-#define GINT_HLVL_2		GPIO_BASE_ADDRESS + 0x78
+#define GINT_HLVL	0x670
 
 /*
  * GINT_LLVL
@@ -131,9 +109,7 @@
  * Enables the condition of low level triggered interrupt
  */
 
-#define GINT_LLVL_0		GPIO_BASE_ADDRESS + 0x80
-#define GINT_LLVL_1		GPIO_BASE_ADDRESS + 0x84
-#define GINT_LLVL_2		GPIO_BASE_ADDRESS + 0x88
+#define GINT_LLVL	0x680
 
 /*
  * GINT_STAT
@@ -141,9 +117,7 @@
  * Records the GPIO current interrupt status
  */
 
-#define GINT_STAT_0		GPIO_BASE_ADDRESS + 0x90
-#define GINT_STAT_1		GPIO_BASE_ADDRESS + 0x94
-#define GINT_STAT_2		GPIO_BASE_ADDRESS + 0x98
+#define GINT_STAT	0x690
 
 /*
  * GINT_EDGE
@@ -151,9 +125,7 @@
  * Records the GPIO current interrupt's edge status
  */
 
-#define GINT_EDGE_0		GPIO_BASE_ADDRESS + 0xA0
-#define GINT_EDGE_1		GPIO_BASE_ADDRESS + 0xA4
-#define GINT_EDGE_2		GPIO_BASE_ADDRESS + 0xA8
+#define GINT_EDGE	0x6A0
 
 /*
  * MMAP_PATH
@@ -190,21 +162,110 @@ static int gpio_mmap(void) {
 	return 0;
 }
 
-void setDirection() {
+void invalidPin(void) {
+	fprintf(stderr, "[!] pin > 95 specified\n");
+	exit(1);
+}
+
+void setDirection(uint8_t pin, int direction) {
+	// create a 32-bit unsigned int
+	uint32_t val = 0;
+	
+	if (pin < 32) {
+		val = *(volatile uint32_t *)(gpio_mmap_reg + GPIO_CTRL);
+		// use bitwise logic to only affect one bit
+		if (direction) {
+			val |= (1u << pin);
+		}
+		else {
+			val &= ~(1u << pin);
+		}
+	}
+	else if (pin < 64) {
+		val = *(volatile uint32_t *)(gpio_mmap_reg + GPIO_CTRL + 0x04);
+		if (direction) {
+			val |= (1u << (pin-32));
+		}
+		else {
+			val &= (1u << (pin-32));
+		}
+	}
+	else if (pin < 96) {
+		val = *(volatile uint32_t *)(gpio_mmap_reg + GPIO_CTRL + 0x08);
+		if (direction) {
+			val |= (1u << (pin-64));
+		}
+		else {
+			val &= (1u << (pin-64));
+		}
+	}
+	else {
+		invalidPin();
+	}
+}
+
+void setPolarity(uint8_t pin, int polarity) {
+	uint32_t val = 0;
 
 }
 
-void setPolarity() {
-
+void setData(uint8_t pin, int data) {
+	uint32_t val = 0;
+	
+	if (pin < 32) {
+		val = (1u << pin);
+		if (data) {
+			*(volatile uint32_t *)(gpio_mmap_reg + GPIO_DSET) = val;
+		}
+	}
+	else if (pin < 64) {
+		val = (1u << (pin-32));
+		if (data) {
+			*(volatile uint32_t *)(gpio_mmap_reg + GPIO_DSET + 0x04) = val;
+		}
+	}
+	else if (pin < 96) {
+		val = (1u << (pin-64));
+		if (data) {
+			*(volatile uint32_t *)(gpio_mmap_reg + GPIO_DSET + 0x08) = val;
+		}
+	}
+	else {
+		invalidPin();
+	}
 }
 
-void setData() {
-
+int getData(uint8_t pin) {
+	uint32_t val = 0;
+	if (pin < 32) {
+		val = *(volatile uint32_t *)(gpio_mmap_reg + GPIO_DATA);
+		val = (val >> pin) & 1u;
+	}
+	else if (pin < 64) {
+		val = *(volatile uint32_t *)(gpio_mmap_reg + GPIO_DATA + 0x04);
+		val = (val >> (pin-32)) & 1u;
+	}
+	else if (pin < 96) {
+		val = *(volatile uint32_t *)(gpio_mmap_reg + GPIO_DATA + 0x08);
+		val = (val >> (pin-64)) & 1u;
+		val = (val >> (pin-24)) & 1u;
+	}
+	else {
+		invalidPin();
+	}
+	return val;
 }
-void clearData() {
+
+void clearData(uint8_t pin) {
+	uint32_t val = 0;
 
 }
 
 int main(int argc, char *argv[]){
+// run the mapping function
+if (gpio_mmap()) {
+	return -1;
 
+}
+return 0;
 }
