@@ -14,3 +14,9 @@ libvocoregpio.a: libvocoregpio.o
 	ar rcs libvocoregpio.a libvocoregpio.o
 clean:
 	rm *.o *.so *.a
+
+install:
+	cp libvocoregpio.so /usr/local/lib
+
+uninstall:
+	rm /usr/local/lib/libvocoregpio.so

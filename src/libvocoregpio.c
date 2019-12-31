@@ -24,12 +24,15 @@
  * It has been built using the MT7628 datasheet as reference http://vonger.cn/upload/MT7628_Full.pdf
  */
 
+
 #include <stdio.h>
 #include <stdint.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <sys/mman.h>
 #include <fcntl.h>
+
+#include "vocoregpio.h"
 
 /*
  * Register definitions
@@ -40,97 +43,73 @@
  */
 
 /* 
- * GPIO_CTRL
- * 
- * Controls the direction of data per register (input/output)
+ * GPIO_CTRL - Controls the direction of data per register (input/output)
  */
 
 #define GPIO_CTRL	0x600
 
 /*
- * GPIO_POL
- *
- * Controls the polarity of the data (high+read/low+write, high+write/low+read)
+ * GPIO_POL - Controls the polarity of the data (high+read/low+write, high+write/low+read)
  */
 
 #define GPIO_POL	0x610
 
 /*
- * GPIO_DATA
- * 
- * Stores the current GPIO data
+ * GPIO_DATA - Stores the current GPIO data
  */
 
 #define GPIO_DATA	0x620
 
 /*
- * GPIO_DSET
- * 
- * Sets bits in GPIO_DATA registers
+ * GPIO_DSET - Sets bits in GPIO_DATA registers
  */
 
 #define GPIO_DSET	0x630
 
 /*
- * GPIO_DCLR
- *
- * Clears bits in GPIO_DATA registers
+ * GPIO_DCLR - Clears bits in GPIO_DATA registers
  */
 
 #define GPIO_DCLR	0x640
 
 /*
- * GINT_REDGE
- *
- * Enables the condition of rising edge triggered interrupt
+ * GINT_REDGE - Enables the condition of rising edge triggered interrupt
  */
 
 #define GINT_REDGE	0x650
 
 /*
- * GINT_FEDGE
- *
- * Enables the condition of falling edge triggered interrupt
+ * GINT_FEDGE - Enables the condition of falling edge triggered interrupt
  */
 
 #define GINT_FEDGE	0x660
 
 /*
- * GINT_HLVL
- *
- * Enables the condition of high level triggered interrupt
+ * GINT_HLVL - Enables the condition of high level triggered interrupt
  */
 
 #define GINT_HLVL	0x670
 
 /*
- * GINT_LLVL
- *
- * Enables the condition of low level triggered interrupt
+ * GINT_LLVL - Enables the condition of low level triggered interrupt
  */
 
 #define GINT_LLVL	0x680
 
 /*
- * GINT_STAT
- *
- * Records the GPIO current interrupt status
+ * GINT_STAT - Records the GPIO current interrupt status
  */
 
 #define GINT_STAT	0x690
 
 /*
- * GINT_EDGE
- *
- * Records the GPIO current interrupt's edge status
+ * GINT_EDGE - Records the GPIO current interrupt's edge status
  */
 
 #define GINT_EDGE	0x6A0
 
 /*
- * MMAP_PATH
- *
- * Set /dev/mem as path for reading GPIO pins
+ * MMAP_PATH - Set /dev/mem as path for reading GPIO pins
  */
 
 #define MMAP_PATH 		"/dev/mem"
